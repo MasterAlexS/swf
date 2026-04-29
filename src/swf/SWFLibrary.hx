@@ -122,7 +122,7 @@ import flash.display.AVM1Movie;
 		loader = new Loader();
 		loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, function(event)
 		{
-			if (paths.exists(id))
+			if (bytes != null || paths.exists(id))
 			{
 				promise.error(event.text);
 			}

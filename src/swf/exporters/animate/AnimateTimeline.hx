@@ -251,7 +251,7 @@ class AnimateTimeline extends Timeline
 					{
 						if (targetDepth > mask.depth && targetDepth <= mask.clipDepth)
 						{
-							#if (openfl >= "9.5.0")
+							#if (openfl >= "9.5.0" && !flash)
 							child.clippingLayer = mask.displayObject;
 							#else
 							child.mask = mask.displayObject;

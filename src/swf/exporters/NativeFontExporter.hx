@@ -42,9 +42,9 @@ class NativeFontExporter
 
 		if (fontTag.hasLayout)
 		{
-			font.ascent = fontTag.ascent / scale;
-			font.descent = fontTag.descent / scale;
-			font.leading = fontTag.leading / scale;
+			font.ascent = roundFloat(fontTag.ascent / scale);
+			font.descent = roundFloat(fontTag.descent / scale);
+			font.leading = roundFloat(fontTag.leading / scale);
 		}
 
 		var shapeTable = fontTag.glyphShapeTable;
@@ -67,7 +67,7 @@ class NativeFontExporter
 				var charAdvance = 0.0;
 				if (fontTag.hasLayout && fontTag.fontAdvanceTable != null && i < fontTag.fontAdvanceTable.length)
 				{
-					charAdvance = fontTag.fontAdvanceTable[i] / scale;
+					charAdvance = roundFloat(fontTag.fontAdvanceTable[i] / scale);
 				}
 
 				font.glyphs.set(charCode, {
@@ -89,18 +89,23 @@ class NativeFontExporter
 			switch (cmd)
 			{
 				case MoveTo(x, y):
-					result.push(GlyphCommand.MoveTo(x / scale, y / scale));
+					result.push(GlyphCommand.MoveTo(roundFloat(x / scale), roundFloat(y / scale)));
 
 				case LineTo(x, y):
-					result.push(GlyphCommand.LineTo(x / scale, y / scale));
+					result.push(GlyphCommand.LineTo(roundFloat(x / scale), roundFloat(y / scale)));
 
 				case CurveTo(cx, cy, ax, ay):
-					result.push(GlyphCommand.CurveTo(cx / scale, cy / scale, ax / scale, ay / scale));
+					result.push(GlyphCommand.CurveTo(roundFloat(cx / scale), roundFloat(cy / scale), roundFloat(ax / scale), roundFloat(ay / scale)));
 
 				default:
 			}
 		}
 
 		return result;
+	}
+
+	private static inline function roundFloat(val:Float):Float
+	{
+		return Math.round(val * 10000.0) / 10000.0;
 	}
 }

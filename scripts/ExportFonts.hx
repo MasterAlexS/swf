@@ -2,6 +2,7 @@ package;
 
 import sys.io.File;
 import sys.FileSystem;
+import haxe.io.Path;
 import swf.SWF;
 import openfl.utils.ByteArray;
 import swf.exporters.NativeFontExporter;
@@ -21,10 +22,14 @@ class ExportFonts
 		var swfPath = args[0];
 		var outputDir = args[1];
 
+		if (!FileSystem.exists(swfPath))
+		{
+			Sys.println("Error: Input SWF file not found at path: " + swfPath);
+			return;
+		}
+
 		Sys.println("Reading SWF: " + swfPath);
-
 		var rawBytes = File.getBytes(swfPath);
-
 		var bytes = ByteArray.fromBytes(rawBytes);
 
 		bytes.position = 0;
@@ -60,7 +65,7 @@ class ExportFonts
 
 			var xmlContent = generateXML(font);
 
-			var filePath = outputDir + "/" + safeName + ".xml";
+			var filePath = Path.join([outputDir, safeName + ".xml"]);
 			File.saveContent(filePath, xmlContent);
 			Sys.println("Saved: " + filePath);
 		}
@@ -70,46 +75,41 @@ class ExportFonts
 
 	private static function generateXML(font:SWFVectorFont):String
 	{
-		var xml = '<?xml version="1.0" encoding="utf-8"?>\n';
-		xml += '<font name="'
-			+ font.name
-			+ '" ascent="'
-			+ font.ascent
-			+ '" descent="'
-			+ font.descent
-			+ '" leading="'
-			+ font.leading
-			+ '">\n';
+		var buf = new StringBuf();
+
+		buf.add('<?xml version="1.0" encoding="utf-8"?>\n');
+		buf.add('<font name="${font.name}" ascent="${font.ascent}" descent="${font.descent}" leading="${font.leading}">\n');
 
 		for (charCode in font.glyphs.keys())
 		{
 			var glyph = font.glyphs.get(charCode);
-			xml += '\t<glyph charCode="' + charCode + '" advance="' + glyph.advance + '">\n';
+			buf.add('\t<glyph charCode="$charCode" advance="${glyph.advance}">\n');
 
-			var pathData = "";
+			var pathBuf = new StringBuf();
 
 			for (cmd in glyph.commands)
 			{
 				switch (cmd)
 				{
 					case MoveTo(x, y):
-						pathData += 'M $x $y ';
+						pathBuf.add('M $x $y ');
 					case LineTo(x, y):
-						pathData += 'L $x $y ';
+						pathBuf.add('L $x $y ');
 					case CurveTo(cx, cy, ax, ay):
-						pathData += 'Q $cx $cy $ax $ay ';
+						pathBuf.add('Q $cx $cy $ax $ay ');
 				}
 			}
 
-			if (StringTools.trim(pathData) != "")
+			var pathString = StringTools.trim(pathBuf.toString());
+			if (pathString != "")
 			{
-				xml += '\t\t<path d="' + StringTools.trim(pathData) + '"/>\n';
+				buf.add('\t\t<path d="$pathString"/>\n');
 			}
 
-			xml += '\t</glyph>\n';
+			buf.add('\t</glyph>\n');
 		}
 
-		xml += '</font>';
-		return xml;
+		buf.add('</font>');
+		return buf.toString();
 	}
 }

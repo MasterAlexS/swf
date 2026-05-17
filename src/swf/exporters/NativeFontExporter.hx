@@ -62,7 +62,7 @@ class NativeFontExporter
 				var shapeExporter = new ShapeCommandExporter(null);
 				shape.export(shapeExporter);
 
-				var glyphCommands = convertCommands(shapeExporter.commands, scale);
+				var finalSvgPath = generateSVGPath(shapeExporter.commands, scale);
 
 				var charAdvance = 0.0;
 				if (fontTag.hasLayout && fontTag.fontAdvanceTable != null && i < fontTag.fontAdvanceTable.length)
@@ -71,7 +71,7 @@ class NativeFontExporter
 				}
 
 				font.glyphs.set(charCode, {
-					commands: glyphCommands,
+					pathData: finalSvgPath,
 					advance: charAdvance
 				});
 			}
@@ -80,28 +80,41 @@ class NativeFontExporter
 		return font;
 	}
 
-	private static function convertCommands(openflCommands:Array<ShapeCommand>, scale:Float):Array<GlyphCommand>
+	private static function generateSVGPath(commands:Array<ShapeCommand>, scale:Float):String
 	{
-		var result = new Array<GlyphCommand>();
+		if (commands == null || commands.length == 0) return "";
 
-		for (cmd in openflCommands)
+		var buf = new StringBuf();
+		for (cmd in commands)
 		{
 			switch (cmd)
 			{
 				case MoveTo(x, y):
-					result.push(GlyphCommand.MoveTo(roundFloat(x / scale), roundFloat(y / scale)));
-
+					buf.add("M ");
+					buf.add(roundFloat(x / scale));
+					buf.add(" ");
+					buf.add(roundFloat(y / scale));
+					buf.add(" ");
 				case LineTo(x, y):
-					result.push(GlyphCommand.LineTo(roundFloat(x / scale), roundFloat(y / scale)));
-
+					buf.add("L ");
+					buf.add(roundFloat(x / scale));
+					buf.add(" ");
+					buf.add(roundFloat(y / scale));
+					buf.add(" ");
 				case CurveTo(cx, cy, ax, ay):
-					result.push(GlyphCommand.CurveTo(roundFloat(cx / scale), roundFloat(cy / scale), roundFloat(ax / scale), roundFloat(ay / scale)));
-
+					buf.add("Q ");
+					buf.add(roundFloat(cx / scale));
+					buf.add(" ");
+					buf.add(roundFloat(cy / scale));
+					buf.add(" ");
+					buf.add(roundFloat(ax / scale));
+					buf.add(" ");
+					buf.add(roundFloat(ay / scale));
+					buf.add(" ");
 				default:
 			}
 		}
-
-		return result;
+		return StringTools.trim(buf.toString());
 	}
 
 	private static inline function roundFloat(val:Float):Float

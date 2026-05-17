@@ -15,7 +15,12 @@ class ExportFonts
 		var args = Sys.args();
 		if (args.length < 2)
 		{
-			Sys.println("Usage: haxe --run ExportFonts <input.swf> <output_folder>");
+			Sys.println("ExportFonts - Native SWF Vector Extractor\n");
+			Sys.println("Usage (Recommended - Neko):");
+			Sys.println("  1. Build: haxe -cp src -cp scripts -lib openfl -lib lime -lib format -D optional-cffi -main ExportFonts -neko export_fonts.n");
+			Sys.println("  2. Run:   neko export_fonts.n <input.swf> <output_folder>\n");
+			Sys.println("Usage (Direct/Eval - May cause memory issues on large SWFs):");
+			Sys.println("  haxe --run ExportFonts <input.swf> <output_folder>");
 			return;
 		}
 
@@ -85,25 +90,11 @@ class ExportFonts
 			var glyph = font.glyphs.get(charCode);
 			buf.add('\t<glyph charCode="$charCode" advance="${glyph.advance}">\n');
 
-			var pathBuf = new StringBuf();
-
-			for (cmd in glyph.commands)
+			if (glyph.pathData != "")
 			{
-				switch (cmd)
-				{
-					case MoveTo(x, y):
-						pathBuf.add('M $x $y ');
-					case LineTo(x, y):
-						pathBuf.add('L $x $y ');
-					case CurveTo(cx, cy, ax, ay):
-						pathBuf.add('Q $cx $cy $ax $ay ');
-				}
-			}
-
-			var pathString = StringTools.trim(pathBuf.toString());
-			if (pathString != "")
-			{
-				buf.add('\t\t<path d="$pathString"/>\n');
+				buf.add('\t\t<path d="');
+				buf.add(glyph.pathData);
+				buf.add('"/>\n');
 			}
 
 			buf.add('\t</glyph>\n');

@@ -6,6 +6,9 @@ import swf.tags.TagDefineFont3;
 import swf.exporters.ShapeCommandExporter;
 import swf.exporters.core.ShapeCommand;
 import swf.exporters.SWFVectorFont;
+import sys.thread.Thread;
+import sys.thread.Mutex;
+import sys.thread.Lock;
 
 class NativeFontExporter
 {
@@ -14,14 +17,37 @@ class NativeFontExporter
 	public static function extract(swf:SWF):Array<SWFVectorFont>
 	{
 		var exportedFonts = new Array<SWFVectorFont>();
+		var fontTagsToProcess = new Array<TagDefineFont2>();
 
 		for (tag in swf.data.tags)
 		{
 			if (Std.isOfType(tag, TagDefineFont2))
 			{
-				var fontTag:TagDefineFont2 = cast tag;
-				exportedFonts.push(processFontTag(fontTag));
+				fontTagsToProcess.push(cast tag);
 			}
+		}
+
+		if (fontTagsToProcess.length == 0) return exportedFonts;
+
+		var mutex = new Mutex();
+		var lock = new Lock();
+
+		for (fontTag in fontTagsToProcess)
+		{
+			Thread.create(function()
+			{
+				var parsedFont = processFontTag(fontTag);
+
+				mutex.acquire();
+				exportedFonts.push(parsedFont);
+				mutex.release();
+				lock.release();
+			});
+		}
+
+		for (i in 0...fontTagsToProcess.length)
+		{
+			lock.wait();
 		}
 
 		return exportedFonts;
